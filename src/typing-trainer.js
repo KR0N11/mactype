@@ -2,65 +2,81 @@ import { TypingSession } from "./session.js";
 import { computeStats } from "./stats.js";
 import { UnmeasurableSessionError } from "./errors.js";
 
-// Runs one typing test: holds the session, updates the screen, scores the finish.
+// Runs one typing test. Reports what happens through callbacks, so it never
+// touches the screen and can be tested without a browser.
 export class TypingTrainer {
-  #view;
-  #hesitationMs;
   #session;
+  #hesitationMs;
+  #onProgress;
+  #onFinish;
+  #finished = false;
 
-  constructor(view, target, { hesitationMs = 500 } = {}) {
-    this.#view = view;
-    this.#hesitationMs = hesitationMs;
-    // Built here rather than in a later start() call, so there is never a moment
-    // where the trainer exists with no run to type into.
+  constructor(target, { hesitationMs = 500, onProgress = () => {}, onFinish = () => {} } = {}) {
     this.#session = new TypingSession(target);
-    this.#view.render(this.#session);
+    this.#hesitationMs = hesitationMs;
+    this.#onProgress = onProgress;
+    this.#onFinish = onFinish;
   }
 
   get session() {
     return this.#session;
   }
 
-  // Records one typed character and redraws.
+  get isFinished() {
+    return this.#finished;
+  }
+
+  // Records one typed character.
   press(char, at) {
-    // Typing past the last character is a normal thing a person does, not a bug.
-    // The session would throw, and an uncaught throw stops the page updating at all.
-    if (this.#session.isComplete) {
+    // Typing past the end, or after the clock ran out, is a normal thing a person
+    // does. The session would throw, and an uncaught throw freezes the page.
+    if (this.#finished || this.#session.isComplete) {
       return;
     }
 
     this.#session.press(char, at);
-    this.#view.render(this.#session);
+    this.#onProgress(this.#session);
 
     if (this.#session.isComplete) {
-      this.#finish();
+      this.finish();
     }
   }
 
-  // Undoes the last character and redraws.
+  // Undoes the last character.
   backspace(at) {
-    // Same reason: hitting delete at the very start is a normal reflex, so we
-    // do nothing rather than let the session's error stop the page.
-    if (this.#session.cursor === 0) {
+    // Delete at the very start is a normal reflex, so do nothing rather than throw.
+    if (this.#finished || this.#session.cursor === 0) {
       return;
     }
 
     this.#session.backspace(at);
-    this.#view.render(this.#session);
+    this.#onProgress(this.#session);
   }
 
-  // Works out the score and shows it, or says why the run could not be scored.
-  #finish() {
+  // Ends the run and reports the score. Called by the clock running out too.
+  finish() {
+    // The clock and the last keystroke can both end a run in the same instant,
+    // and scoring twice would save the run to history twice.
+    if (this.#finished) {
+      return;
+    }
+
+    this.#finished = true;
+    this.#onFinish(this.#score());
+  }
+
+  // Works out the score, or says the run was too short to score.
+  #score() {
     try {
-      this.#view.showStats(computeStats(this.#session, { hesitationMs: this.#hesitationMs }));
+      return { scored: true, stats: computeStats(this.#session, { hesitationMs: this.#hesitationMs }) };
     } catch (error) {
-      // The rules for "too short to score" live in one place, in computeStats.
-      // Copying them here would mean changing the same rule in two files.
+      // The rule for "too short to score" lives in computeStats. Repeating it here
+      // would mean changing the same rule in two files.
       if (!(error instanceof UnmeasurableSessionError)) {
         throw error;
       }
 
-      this.#view.showMessage("Not enough typing to score that run.");
+      return { scored: false };
     }
   }
 }

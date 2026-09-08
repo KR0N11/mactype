@@ -1,11 +1,18 @@
 <!doctype html>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>mactype</title>
 <link rel="stylesheet" href="./style.css">
 <main>
-  <h1>mactype</h1>
-  <p class="hint">Start typing. Eyes on the screen, not on the keys.</p>
+  <header>
+    <h1>mactype</h1>
+    <p class="tagline">touch typing for Mac. eyes on the screen, never on the keys.</p>
+  </header>
+  <nav id="menu"></nav>
+  <div id="hud"></div>
   <div id="text"></div>
-  <div id="stats"></div>
+  <section id="results" hidden></section>
+  <footer id="history"></footer>
+  <p class="keys"><kbd>tab</kbd> restart &nbsp;·&nbsp; <kbd>delete</kbd> fix a mistake</p>
 </main>
 <script type="module" src="./src/main.js"></script>

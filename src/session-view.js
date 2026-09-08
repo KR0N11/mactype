@@ -1,29 +1,29 @@
-const STATE_CLASS = { pending: "pending", correct: "correct", wrong: "wrong" };
-
-// Draws the run on the page. Knows nothing about keys or scoring.
+// Draws the text you are typing. Knows nothing about keys or scoring.
 export class SessionView {
-  #textElement;
-  #statsElement;
+  #element;
+  #line;
 
-  constructor(textElement, statsElement) {
-    this.#textElement = textElement;
-    this.#statsElement = statsElement;
+  constructor(element) {
+    this.#element = element;
+    this.#line = document.createElement("div");
+    this.#line.className = "line";
+    this.#element.replaceChildren(this.#line);
   }
 
   // Paints the target text, one span per character, coloured by how you did.
   render(session) {
     const characters = [...session.target];
     const entries = session.entries;
-    this.#textElement.replaceChildren();
+    const spans = [];
 
     for (let i = 0; i < characters.length; i += 1) {
       const span = document.createElement("span");
 
       // Characters you have not reached yet have no entry, so there is nothing to judge.
       if (i < entries.length) {
-        span.className = entries[i].correct ? STATE_CLASS.correct : STATE_CLASS.wrong;
+        span.className = entries[i].correct ? "correct" : "wrong";
       } else {
-        span.className = STATE_CLASS.pending;
+        span.className = "pending";
       }
 
       // Marks where you are, so you can follow along without looking at the keys.
@@ -31,39 +31,28 @@ export class SessionView {
         span.classList.add("cursor");
       }
 
-      // textContent, not innerHTML. The user can paste their own practice text, and
-      // pasting "<img onerror=...>" would otherwise run as code on the page.
+      // textContent, not innerHTML. Practice text could contain "<img onerror=...>",
+      // and innerHTML would run it as code on the page.
       span.textContent = characters[i];
-      this.#textElement.append(span);
-    }
-  }
-
-  // Puts the final numbers on screen. All rounding happens here, never in the scoring.
-  showStats(stats) {
-    const worst = [...stats.errorsByKey.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([key, count]) => `${key === " " ? "space" : key} x${count}`)
-      .join(", ");
-
-    const lines = [
-      `${Math.round(stats.netWpm)} wpm`,
-      `${Math.round(stats.rawWpm)} raw`,
-      `${Math.round(stats.accuracy * 100)}% accurate`,
-      `${Math.round(stats.consistency * 100)}% even`,
-      `${stats.hesitations} look-downs`,
-    ];
-
-    // With no mistakes there are no worst keys, and an empty line looks like a bug.
-    if (worst !== "") {
-      lines.push(`worst: ${worst}`);
+      spans.push(span);
     }
 
-    this.#statsElement.textContent = lines.join("  ·  ");
+    this.#line.replaceChildren(...spans);
+    this.#scrollToCursor();
   }
 
-  // Used when a run finished but there was not enough typing to score it.
-  showMessage(text) {
-    this.#statsElement.textContent = text;
+  // Slides the text up so the line you are typing stays in view.
+  #scrollToCursor() {
+    const cursor = this.#line.querySelector(".cursor");
+
+    // A finished run has no cursor left, and a test browser reports no layout,
+    // so there is nothing to scroll to in either case.
+    if (cursor === null || typeof cursor.offsetTop !== "number") {
+      return;
+    }
+
+    const lineHeight = cursor.offsetHeight || 1;
+    const linesDown = Math.round(cursor.offsetTop / lineHeight);
+    this.#line.style.transform = `translateY(${-Math.max(0, linesDown - 1) * lineHeight}px)`;
   }
 }

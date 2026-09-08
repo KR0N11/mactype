@@ -1,107 +1,109 @@
 import { test, expect, beforeEach } from "vitest";
 import { TypingTrainer } from "../src/typing-trainer.js";
 
-let renders;
-let shown;
-let messages;
-let view;
+let progress;
+let finishes;
 
 beforeEach(() => {
-  renders = [];
-  shown = [];
-  messages = [];
-  // A stand in for the screen, so these tests never need a browser.
-  view = {
-    render: (session) => renders.push(session.cursor),
-    showStats: (stats) => shown.push(stats),
-    showMessage: (text) => messages.push(text),
-  };
+  progress = [];
+  finishes = [];
 });
+
+// Builds a trainer that records what it reports, instead of drawing anything.
+function makeTrainer(target, options = {}) {
+  return new TypingTrainer(target, {
+    onProgress: (session) => progress.push(session.cursor),
+    onFinish: (result) => finishes.push(result),
+    ...options,
+  });
+}
 
 // Types the whole target correctly, one press every 100ms.
 function typeAll(trainer, text) {
   [...text].forEach((char, i) => trainer.press(char, i * 100));
 }
 
-// Proves the screen is drawn once as soon as the run exists, before any typing.
-test("AC5.1 the run is drawn on screen the moment it starts", () => {
-  new TypingTrainer(view, "cat");
-  expect(renders).toEqual([0]);
-});
-
-// Proves every keystroke redraws the screen.
-test("AC5.2 each press redraws the screen", () => {
-  const trainer = new TypingTrainer(view, "cat");
+// Proves every keystroke reports progress so the screen can follow along.
+test("AC9.1 each press reports progress", () => {
+  const trainer = makeTrainer("cat");
   trainer.press("c", 0);
   trainer.press("x", 100);
-  expect(renders).toEqual([0, 1, 2]);
+  expect(progress).toEqual([1, 2]);
 });
 
-// Proves the score appears by itself once the last character is typed.
-test("AC5.3 finishing the target shows the score without being asked", () => {
-  const trainer = new TypingTrainer(view, "cat");
+// Proves the score arrives by itself once the last character is typed.
+test("AC9.2 finishing the text reports a score without being asked", () => {
+  const trainer = makeTrainer("cat");
   typeAll(trainer, "cat");
-  expect(shown).toHaveLength(1);
-  expect(shown[0].accuracy).toBe(1);
-  expect(messages).toEqual([]);
+  expect(finishes).toHaveLength(1);
+  expect(finishes[0].scored).toBe(true);
+  expect(finishes[0].stats.accuracy).toBe(1);
+  expect(trainer.isFinished).toBe(true);
 });
 
-// Proves typing past the end is quietly ignored instead of stopping the page.
-test("AC5.4 typing past the end changes nothing", () => {
-  const trainer = new TypingTrainer(view, "cat");
+// Proves the clock running out ends the run and scores what you managed.
+test("AC9.3 finishing early scores the part you typed", () => {
+  const trainer = makeTrainer("cat and dog");
+  trainer.press("c", 0);
+  trainer.press("a", 100);
+  trainer.finish();
+  expect(finishes[0].scored).toBe(true);
+  expect(finishes[0].stats.totalPresses).toBe(2);
+});
+
+// Proves a run cannot be scored twice, which would save it to history twice.
+test("AC9.4 a run is only scored once", () => {
+  const trainer = makeTrainer("cat");
   typeAll(trainer, "cat");
-  const rendersAfterFinish = renders.length;
-  trainer.press("s", 400);
-  expect(trainer.session.cursor).toBe(3);
-  expect(renders).toHaveLength(rendersAfterFinish);
-  expect(shown).toHaveLength(1);
+  trainer.finish();
+  trainer.finish();
+  expect(finishes).toHaveLength(1);
 });
 
-// Proves delete at the very start is quietly ignored instead of stopping the page.
-test("AC5.5 delete at the start changes nothing", () => {
-  const trainer = new TypingTrainer(view, "cat");
+// Proves keys pressed after the clock ran out are ignored, not recorded.
+test("AC9.5 typing after the run ends changes nothing", () => {
+  const trainer = makeTrainer("cat and dog");
+  trainer.press("c", 0);
+  trainer.press("a", 100);
+  trainer.finish();
+  trainer.press("t", 200);
+  trainer.backspace(300);
+  expect(trainer.session.cursor).toBe(2);
+  expect(progress).toEqual([1, 2]);
+});
+
+// Proves delete at the very start is ignored rather than stopping the page.
+test("AC9.6 delete at the start changes nothing", () => {
+  const trainer = makeTrainer("cat");
   trainer.backspace(0);
   expect(trainer.session.cursor).toBe(0);
-  expect(trainer.session.log).toEqual([]);
-  expect(renders).toEqual([0]);
+  expect(progress).toEqual([]);
 });
 
-// Proves delete undoes the last character and redraws.
-test("AC5.6 delete removes the last character", () => {
-  const trainer = new TypingTrainer(view, "cat");
+// Proves delete undoes the last character and reports the new position.
+test("AC9.7 delete removes the last character", () => {
+  const trainer = makeTrainer("cat");
   trainer.press("c", 0);
   trainer.backspace(100);
-  expect(trainer.session.cursor).toBe(0);
-  expect(renders).toEqual([0, 1, 0]);
+  expect(progress).toEqual([1, 0]);
 });
 
-// Proves a run too short to score says so instead of showing broken numbers.
-test("AC5.7 a one character run says it could not be scored", () => {
-  const trainer = new TypingTrainer(view, "a");
+// Proves a run too short to score says so rather than showing broken numbers.
+test("AC9.8 a run too short to score is reported as unscored", () => {
+  const trainer = makeTrainer("a");
   trainer.press("a", 0);
-  expect(shown).toEqual([]);
-  expect(messages).toEqual(["Not enough typing to score that run."]);
+  expect(finishes).toEqual([{ scored: false }]);
 });
 
-// Proves a run where no time passed says so rather than reporting Infinity.
-test("AC5.8 a run with no time between keystrokes says it could not be scored", () => {
-  const trainer = new TypingTrainer(view, "cat");
-  typeAll(trainer, "cat");
-  const instant = new TypingTrainer(view, "cat");
-  [..."cat"].forEach((char) => instant.press(char, 0));
-  expect(messages).toEqual(["Not enough typing to score that run."]);
-});
-
-// Proves a real fault is not swallowed by the "too short to score" handling.
-test("AC5.9 an unexpected failure while scoring is not hidden", () => {
-  const broken = { ...view, showStats: () => { throw new RangeError("boom"); } };
-  const trainer = new TypingTrainer(broken, "cat");
+// Proves a real fault is not hidden by the "too short to score" handling.
+test("AC9.9 an unexpected failure while scoring is not swallowed", () => {
+  const trainer = makeTrainer("cat", { onFinish: () => { throw new RangeError("boom"); } });
   expect(() => typeAll(trainer, "cat")).toThrow(RangeError);
 });
 
-// Proves the pause threshold set on the trainer reaches the scoring.
-test("AC5.10 the hesitation threshold reaches the score", () => {
-  const trainer = new TypingTrainer(view, "cat", { hesitationMs: 50 });
+// Proves the pause threshold reaches the scoring.
+test("AC9.10 the hesitation threshold reaches the score", () => {
+  const trainer = makeTrainer("cat", { hesitationMs: 50 });
   typeAll(trainer, "cat");
-  expect(shown[0].hesitations).toBe(2);
+  expect(finishes[0].stats.hesitations).toBe(2);
 });

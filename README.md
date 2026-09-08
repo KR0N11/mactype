@@ -54,7 +54,20 @@ otherwise deleting everything would score 100%.
   needs a new text to type.
 - The target text is currently a single hardcoded sentence.
 
-## Status
+## What it does
 
-Session state machine, run scoring, and the browser layer are done and tested.
-Text corpus and saved run history are not built yet.
+- 11 lessons: home row, top row, bottom row, all letters, common words,
+  capitals, punctuation, the number row, symbols, and code.
+- Two modes: timed (15/30/60s) or a fixed number of words (10/25/50).
+- Live countdown or word progress while you type, a score when you finish,
+  and Tab to go again.
+- Your runs are saved in the browser: personal best per lesson, a day streak,
+  and the keys you miss most across every run.
+
+## Why there is no login
+
+Accounts need a server, a database and password handling, and none of it makes
+you type faster. What an account would buy you here is remembered progress, and
+the browser already does that: best scores, streak and weak keys all persist
+with no sign-in and no network. Accounts would only start earning their cost if
+you wanted the same history on a second device.

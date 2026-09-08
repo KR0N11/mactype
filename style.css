@@ -1,57 +1,194 @@
 :root {
-  color-scheme: light dark;
-  --dim: #8a8a8a;
-  --wrong: #d13b3b;
+  --bg: #16161a;
+  --dim: #55565c;
+  --text: #d3d5db;
+  --accent: #e2b714;
+  --wrong: #ca4754;
+  --line-height: 3rem;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
-  /* The Mac system monospace font, so every character is the same width and
-     the text does not shift sideways as you type. */
+  /* The Mac system monospace font, so every character is the same width and the
+     text does not shift sideways as you type. */
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  background: var(--bg);
+  color: var(--text);
   margin: 0;
+  min-height: 100vh;
   display: grid;
   place-items: center;
-  min-height: 100vh;
+  /* Nothing on this page is meant to be selected with the mouse, and an accidental
+     drag-select over the text makes it unreadable while you type. */
+  user-select: none;
 }
 
 main {
-  width: min(46rem, 90vw);
+  width: min(60rem, 92vw);
+  padding: 3rem 0;
 }
 
-h1 {
-  font-size: 1rem;
-  font-weight: 600;
+header h1 {
+  font-size: 1.1rem;
+  color: var(--accent);
+  margin: 0;
 }
 
-.hint {
+.tagline {
   color: var(--dim);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  margin: 0.3rem 0 2rem;
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  margin-bottom: 0.4rem;
+}
+
+.group button {
+  font: inherit;
+  font-size: 0.78rem;
+  background: none;
+  border: 0;
+  color: var(--dim);
+  padding: 0.3rem 0.55rem;
+  border-radius: 0.3rem;
+  cursor: pointer;
+}
+
+.group button:hover {
+  color: var(--text);
+}
+
+.group button.on {
+  color: var(--accent);
+}
+
+.group.modes,
+.group.amounts {
+  display: inline-flex;
+  margin-right: 0.6rem;
+}
+
+#hud {
+  color: var(--accent);
+  font-size: 1.5rem;
+  margin: 2rem 0 0.6rem;
+  min-height: 2rem;
 }
 
 #text {
   font-size: 1.6rem;
-  line-height: 2;
-  /* Keeps runs of spaces intact, so a space between words is still one character wide. */
+  /* Three lines tall with the rest clipped, so the page never grows as you type. */
+  height: calc(var(--line-height) * 3);
+  overflow: hidden;
+}
+
+#text .line {
+  line-height: var(--line-height);
+  /* Keeps runs of spaces intact, so a space between words stays one character wide. */
   white-space: pre-wrap;
+  transition: transform 0.15s;
 }
 
 #text .pending {
   color: var(--dim);
 }
 
+#text .correct {
+  color: var(--text);
+}
+
 #text .wrong {
   color: var(--wrong);
-  /* A mistyped space is invisible without a background, so the user cannot see it. */
-  background: color-mix(in srgb, var(--wrong) 22%, transparent);
+  /* A mistyped space is invisible without a background, so you cannot see the error. */
+  background: rgba(202, 71, 84, 0.22);
 }
 
 #text .cursor {
-  border-left: 2px solid currentColor;
-  margin-left: -2px;
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
-#stats {
-  margin-top: 1.5rem;
+#results {
+  margin-top: 2rem;
+  border-top: 1px solid #26262b;
+  padding-top: 1.5rem;
+}
+
+.verdict {
   color: var(--dim);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
+}
+
+.verdict.best {
+  color: var(--accent);
+}
+
+.figures {
+  display: flex;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.figures div {
+  display: flex;
+  flex-direction: column;
+}
+
+.figures strong {
+  color: var(--accent);
+  font-size: 2.2rem;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.figures span {
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+
+.worst,
+.note {
+  color: var(--dim);
+  font-size: 0.8rem;
+}
+
+.again {
+  font: inherit;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  background: none;
+  border: 1px solid #2f3037;
+  color: var(--dim);
+  padding: 0.45rem 1.1rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.again:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+#history,
+.keys {
+  color: var(--dim);
+  font-size: 0.75rem;
+  margin-top: 2.5rem;
+}
+
+.keys {
+  margin-top: 0.8rem;
+}
+
+kbd {
+  border: 1px solid #2f3037;
+  border-radius: 0.2rem;
+  padding: 0.05rem 0.3rem;
 }
