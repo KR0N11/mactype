@@ -1,0 +1,57 @@
+:root {
+  color-scheme: light dark;
+  --dim: #8a8a8a;
+  --wrong: #d13b3b;
+}
+
+body {
+  /* The Mac system monospace font, so every character is the same width and
+     the text does not shift sideways as you type. */
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+}
+
+main {
+  width: min(46rem, 90vw);
+}
+
+h1 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.hint {
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
+#text {
+  font-size: 1.6rem;
+  line-height: 2;
+  /* Keeps runs of spaces intact, so a space between words is still one character wide. */
+  white-space: pre-wrap;
+}
+
+#text .pending {
+  color: var(--dim);
+}
+
+#text .wrong {
+  color: var(--wrong);
+  /* A mistyped space is invisible without a background, so the user cannot see it. */
+  background: color-mix(in srgb, var(--wrong) 22%, transparent);
+}
+
+#text .cursor {
+  border-left: 2px solid currentColor;
+  margin-left: -2px;
+}
+
+#stats {
+  margin-top: 1.5rem;
+  color: var(--dim);
+  font-size: 0.9rem;
+}

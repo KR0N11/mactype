@@ -68,6 +68,45 @@ Answered by me, delegated by the driver on 2026-09-07. Reopen any of these.
 - AC2.12 A run where no time passed is refused, state unchanged
 - AC2.13 Gaps of zero give a real consistency number, never NaN
 
+### Part 3 reading the keyboard
+- AC3.1 A printable key becomes a press and the browser default is stopped
+- AC3.2 Space types a space instead of scrolling the page
+- AC3.3 Backspace becomes a delete and cannot navigate away from the page
+- AC3.4 Keys that produce no character are ignored
+- AC3.5 Command and Control shortcuts are left to the browser
+- AC3.6 An Option produced character such as e acute still types
+- AC3.7 stop detaches the listener
+- AC3.8 With no clock passed in, the time comes from the key event itself
+
+### Part 4 drawing the run
+- AC4.1 A fresh run is all pending with the cursor on the first character
+- AC4.2 Typed characters are marked right or wrong and the cursor moves
+- AC4.3 A finished run shows no cursor
+- AC4.4 Redrawing replaces the old characters instead of adding more
+- AC4.5 Angle brackets in the target are shown as text, never run as page code
+- AC4.6 A space is drawn as its own character
+- AC4.7 Stats are rounded on screen and the worst keys are listed
+- AC4.8 A run with no mistakes shows no worst key line
+- AC4.9 A mistyped space is named "space" in the worst keys
+- AC4.10 A message replaces whatever was in the stats area
+
+### Part 5 running the test
+- AC5.1 The run is drawn on screen the moment it starts
+- AC5.2 Each press redraws the screen
+- AC5.3 Finishing the target shows the score without being asked
+- AC5.4 Typing past the end changes nothing
+- AC5.5 Delete at the start changes nothing
+- AC5.6 Delete removes the last character
+- AC5.7 A run too short to score says so instead of showing broken numbers
+- AC5.8 A run where no time passed says so rather than reporting Infinity
+- AC5.9 An unexpected failure while scoring is not hidden
+- AC5.10 The hesitation threshold set on the trainer reaches the scoring
+
+### Part 6 the page end to end
+- AC6.1 Typing the whole target on the page produces a score
+- AC6.2 A mistake is marked on the page and delete undoes it
+- AC6.3 The page has no editable field for macOS to autocorrect
+
 ## Quality Gates
 - Acceptance criteria: 100 percent. An AC without a passing test counts as failed.
 - Code coverage: 90 percent minimum on the source directory.
