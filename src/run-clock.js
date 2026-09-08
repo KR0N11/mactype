@@ -9,7 +9,10 @@ export class RunClock {
   #handle = null;
   #endsAt = 0;
 
-  constructor({ onTick = () => {}, onExpire = () => {}, now = () => Date.now(), schedule = setInterval, cancel = clearInterval } = {}) {
+  // setInterval and clearInterval are wrapped rather than passed directly. The
+  // browser refuses to run them when they are called on anything but the window,
+  // and calling them as this.#schedule(...) would make "this" the clock instead.
+  constructor({ onTick = () => {}, onExpire = () => {}, now = () => Date.now(), schedule = (fn, ms) => setInterval(fn, ms), cancel = (handle) => clearInterval(handle) } = {}) {
     this.#onTick = onTick;
     this.#onExpire = onExpire;
     this.#now = now;
